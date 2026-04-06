@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+html,body{height:100%;overflow:hidden}
+body{background:#030308;display:flex;flex-direction:column;height:100vh}
+canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.nav{display:flex;align-items:center;justify-content:center;padding:13px 24px;position:relative;z-index:10;border-bottom:0.5px solid rgba(255,255,255,0.05);background:rgba(3,3,8,0.7);backdrop-filter:blur(12px);flex-shrink:0}
+.nav-url{background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 18px;font-size:12px;color:rgba(255,255,255,0.4);letter-spacing:0.03em}
+.main{flex:1;display:flex;flex-direction:column;position:relative;z-index:10;overflow:hidden;min-height:0}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.logo-wrap{width:58px;height:58px;border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02));border:0.5px solid rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center;margin-bottom:22px;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(99,102,241,0.25),0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.12)}
+.logo-inner{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(99,102,241,0.5)}
+.hero-title{font-size:33px;font-weight:600;color:rgba(255,255,255,0.95);text-align:center;letter-spacing:-0.025em;margin-bottom:8px;text-shadow:0 0 40px rgba(139,92,246,0.4)}
+.hero-sub{font-size:15px;color:rgba(255,255,255,0.35);text-align:center}
+.chat-area{display:none;flex:1;flex-direction:column;gap:10px;padding:20px 24px;overflow-y:auto;min-height:0}
+.chat-area::-webkit-scrollbar{width:3px}
+.chat-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+.msg-user{align-self:flex-end;background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.2));border:0.5px solid rgba(99,102,241,0.35);border-radius:16px 16px 4px 16px;padding:10px 16px;font-size:14px;color:rgba(255,255,255,0.88);max-width:70%;box-shadow:0 2px 12px rgba(99,102,241,0.15)}
+.msg-bot{align-self:flex-start;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:16px 16px 16px 4px;padding:10px 16px;font-size:14px;color:rgba(255,255,255,0.75);max-width:75%;white-space:pre-wrap;line-height:1.6;box-shadow:0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)}
+.msg-error{align-self:flex-start;background:rgba(220,50,50,0.08);border:0.5px solid rgba(220,50,50,0.2);border-radius:16px 16px 16px 4px;padding:10px 16px;font-size:13px;color:rgba(255,120,120,0.9);max-width:75%}
+.typing-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.35);animation:blink 1.2s infinite;margin:0 2px}
+.typing-dot:nth-child(2){animation-delay:0.2s}.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+.bottom{display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 20px 16px;position:relative;z-index:10;background:rgba(3,3,8,0.6);backdrop-filter:blur(12px);border-top:0.5px solid rgba(255,255,255,0.04);flex-shrink:0}
+.input-shell{width:100%;max-width:640px;background:linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:0.5px solid rgba(255,255,255,0.12);border-radius:50px;display:flex;align-items:center;padding:0 14px;gap:10px;backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.07);transition:all 0.3s}
+.input-shell:focus-within{border-color:rgba(99,102,241,0.45);box-shadow:0 0 0 3px rgba(99,102,241,0.08),0 0 24px rgba(99,102,241,0.12),inset 0 1px 0 rgba(255,255,255,0.08)}
+.input-plus{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.input-field{flex:1;background:transparent;border:none;outline:none;font-size:14px;color:rgba(255,255,255,0.8);padding:14px 0}
+.input-field::placeholder{color:rgba(255,255,255,0.22)}
+.send-btn{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;box-shadow:0 2px 8px rgba(99,102,241,0.4)}
+.send-btn:hover{transform:scale(1.08);box-shadow:0 4px 16px rgba(99,102,241,0.6)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;max-width:640px}
+.chip{background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.1);border-radius:50px;padding:7px 15px;font-size:12px;color:rgba(255,255,255,0.38);cursor:pointer;transition:all 0.22s;white-space:nowrap}
+.chip:hover{background:rgba(99,102,241,0.12);border-color:rgba(99,102,241,0.35);color:rgba(255,255,255,0.75);transform:translateY(-2px)}
+.footer{text-align:center;padding:10px;position:relative;z-index:10;flex-shrink:0}
+.footer-text{font-size:11px;color:rgba(255,255,255,0.12);letter-spacing:0.02em}
+.footer-link{color:rgba(99,102,241,0.5);cursor:pointer}
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+
+<div class="nav">
+  <div class="nav-url">multi-agent-system.run.app</div>
+</div>
+
+<div class="main">
+  <div class="hero" id="hero">
+    <div class="logo-wrap"><div class="logo-inner"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg></div></div>
+    <div class="hero-title">Good to See You!</div>
+    <div class="hero-sub">How Can I be of Assistance?</div>
+  </div>
+  <div class="chat-area" id="chatArea"></div>
+</div>
+
+<div class="bottom">
+  <div class="input-shell">
+    <div class="input-plus"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <input class="input-field" id="mainInput" type="text" placeholder="Ask anything..." />
+    <div class="send-btn" id="sendBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+  </div>
+  <div class="chips" id="chips">
+    <div class="chip" onclick="sendChip('Create a task for me')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Create a task</div>
+    <div class="chip" onclick="sendChip('Schedule an event for me')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule an event</div>
+    <div class="chip" onclick="sendChip('Save a note for me')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Save a note</div>
+    <div class="chip" onclick="sendChip('Show my pending tasks')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Show pending tasks</div>
+    <div class="chip" onclick="sendChip('Search my notes')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search my notes</div>
+  </div>
+</div>
+
+<div class="footer"><div class="footer-text">Your personal AI — managing tasks, calendar &amp; notes · <span class="footer-link">Share</span></div></div>
+
+<script>
+const canvas = document.getElementById('starCanvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS = [
+  'rgba(255,255,255,',
+  'rgba(180,160,255,',
+  'rgba(120,180,255,',
+  'rgba(200,220,255,',
+  'rgba(255,220,180,',
+];
+
+const fireflies = Array.from({length: 160}, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  r: Math.random() * 1.8 + 0.3,
+  color: COLORS[Math.floor(Math.random() * COLORS.length)],
+  alpha: Math.random(),
+  alphaDir: Math.random() > 0.5 ? 1 : -1,
+  alphaSpeed: Math.random() * 0.012 + 0.003,
+  vx: (Math.random() - 0.5) * 0.3,
+  vy: (Math.random() - 0.5) * 0.3,
+  glowing: Math.random() > 0.55,
+}));
+
+function drawStars() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  fireflies.forEach(f => {
+    f.alpha += f.alphaDir * f.alphaSpeed;
+    if (f.alpha >= 1) { f.alpha = 1; f.alphaDir = -1; }
+    if (f.alpha <= 0) {
+      f.alpha = 0; f.alphaDir = 1;
+      f.x = Math.random() * canvas.width;
+      f.y = Math.random() * canvas.height;
+    }
+    f.x += f.vx;
+    f.y += f.vy;
+    if (f.x < 0) f.x = canvas.width;
+    if (f.x > canvas.width) f.x = 0;
+    if (f.y < 0) f.y = canvas.height;
+    if (f.y > canvas.height) f.y = 0;
+
+    if (f.glowing && f.alpha > 0.3) {
+      const grd = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * 7);
+      grd.addColorStop(0, f.color + (f.alpha * 0.5) + ')');
+      grd.addColorStop(1, f.color + '0)');
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r * 7, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.fillStyle = f.color + f.alpha + ')';
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+const input = document.getElementById('mainInput');
+const sendBtn = document.getElementById('sendBtn');
+const chatArea = document.getElementById('chatArea');
+const hero = document.getElementById('hero');
+const chips = document.getElementById('chips');
+let started = false;
+
+function startChat() {
+  if (!started) {
+    hero.style.display = 'none';
+    chatArea.style.display = 'flex';
+    chips.style.display = 'none';
+    started = true;
+  }
+}
+
+function addMsg(text, role) {
+  const d = document.createElement('div');
+  if (role === 'user') { d.className = 'msg-user'; d.textContent = text; }
+  else if (role === 'error') { d.className = 'msg-error'; d.textContent = 'API quota exceeded. Please wait a few minutes and try again.'; }
+  else { d.className = 'msg-bot'; d.textContent = text; }
+  chatArea.appendChild(d);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return d;
+}
+
+function addTyping() {
+  const d = document.createElement('div');
+  d.className = 'msg-bot';
+  d.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  chatArea.appendChild(d);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return d;
+}
+
+async function sendMessage(text) {
+  const t = text.trim();
+  if (!t) return;
+  startChat();
+  input.value = '';
+  addMsg(t, 'user');
+  const typing = addTyping();
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: t})
+    });
+    const data = await res.json();
+    chatArea.removeChild(typing);
+    const resp = data.response || '';
+    if (resp.includes('429') || resp.includes('RESOURCE_EXHAUSTED') || resp.includes('quota')) {
+      addMsg('', 'error');
+    } else {
+      addMsg(resp, 'bot');
+    }
+  } catch(e) {
+    chatArea.removeChild(typing);
+    addMsg('Connection error. Make sure the server is running.', 'error');
+  }
+}
+
+function sendChip(text) { sendMessage(text); }
+sendBtn.onclick = () => sendMessage(input.value);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(input.value); });
+</script>
+</body>
+</html>
