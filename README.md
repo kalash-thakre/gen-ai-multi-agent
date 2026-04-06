@@ -70,6 +70,9 @@ docker build -t gen-ai-multi-agent .
 docker run -p 5000:5000 gen-ai-multi-agent
 ```
 
+## Snapshot
+<img width="3199" height="1926" alt="image" src="https://github.com/user-attachments/assets/e67bfddb-c134-4b97-abfe-b3056a25edca" />
+
 ## API Endpoints
 - **GET /api/tasks**: Retrieves all tasks.
 - **POST /api/tasks**: Creates a new task.
